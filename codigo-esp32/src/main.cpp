@@ -5,7 +5,6 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
-#include <HTTPClient.h> 
 
 // ==========================================
 // 1. CONFIGURACIÓN WIFI
@@ -25,13 +24,7 @@ const char* TOPIC_SENSOR = "esp32/casa01/sensor";
 const char* TOPIC_COMANDO = "esp32/casa01/comando";
 
 // ==========================================
-// 3. CONFIGURACIÓN TELEGRAM
-// ==========================================
-const char* BOT_TOKEN = "8964840821:AAHI2DtzP-CjUrMpvqay4_ql3HZkEdMwKsI"; 
-const char* CHAT_ID = "9167361678"; 
-
-// ==========================================
-// 4. CERTIFICADO CA
+// 3. CERTIFICADO CA
 // ==========================================
 const char* ROOT_CA = R"EOF(
 -----BEGIN CERTIFICATE-----
@@ -62,7 +55,7 @@ WiFiClientSecure espClient;
 PubSubClient mqtt(espClient);
 
 // ==========================================
-// 5. CONFIGURACIÓN DE PINES
+// 4. CONFIGURACIÓN DE PINES
 // ==========================================
 #define SDA_LCD 21
 #define SCL_LCD 22
@@ -73,7 +66,7 @@ PubSubClient mqtt(espClient);
 #define SERVO_PIN 13   
 
 // ==========================================
-// 6. OBJETOS Y VARIABLES
+// 5. OBJETOS Y VARIABLES
 // ==========================================
 LiquidCrystal_I2C lcd(0x27, 16, 2); 
 Servo valvulaServo;
@@ -89,35 +82,14 @@ const float ALTURA_TANQUE_CM = 25.0;
 const int VALOR_SECO = 3200; 
 const int VALOR_MOJADO = 1200; 
 
-// 👇 UMBRALES SÚPER SENSIBLES (Al 5%)
-const int UMBRAL_CIERRE_HUMEDAD = 5;   // Se cierra al 5% de humedad
-const int UMBRAL_CRUDO_MOJADO = 3100;   // O si el valor crudo sube de 3100
+const int UMBRAL_CIERRE_HUMEDAD = 5;   
+const int UMBRAL_CRUDO_MOJADO = 3100;   
 
 unsigned long tiempoAnterior = 0;
 bool alertaEnviada = false; 
 
 // ==========================================
-// 7. FUNCIÓN DE TELEGRAM
-// ==========================================
-void enviarTelegram(String mensaje) {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    String url = "https://api.telegram.org/bot" + String(BOT_TOKEN) + "/sendMessage?chat_id=" + String(CHAT_ID) + "&text=" + mensaje;
-    
-    http.begin(url);
-    int httpCode = http.GET();
-    
-    if (httpCode > 0) {
-      Serial.println("Notificacion de Telegram enviada!");
-    } else {
-      Serial.println("Error al enviar Telegram");
-    }
-    http.end();
-  }
-}
-
-// ==========================================
-// 8. FUNCIONES MQTT
+// 6. FUNCIONES MQTT
 // ==========================================
 void callback(char* topic, byte* payload, unsigned int length) {
   String mensaje = "";
@@ -125,7 +97,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (String(topic) == TOPIC_COMANDO) {
     if (mensaje.indexOf("abrir") >= 0) {
-      // Bloqueo de seguridad: Solo abre si la humedad NO ha llegado al 5%
       if (nivelAgua < UMBRAL_CIERRE_HUMEDAD) {
         valvulaServo.write(100); 
         valvulaAbierta = true;
@@ -169,7 +140,7 @@ void conectarMQTT() {
 }
 
 // ==========================================
-// 9. SETUP
+// 7. SETUP
 // ==========================================
 void setup() {
   Serial.begin(115200);
@@ -196,12 +167,10 @@ void setup() {
   lcd.print("Sistema Listo");
   delay(1000);
   lcd.clear();
-
-  enviarTelegram("EcoTanque IoT iniciado y monitoreando.");
 }
 
 // ==========================================
-// 10. LOOP
+// 8. LOOP
 // ==========================================
 void loop() {
   if (!mqtt.connected()) conectarMQTT();
@@ -265,10 +234,7 @@ void loop() {
     tone(BUZZER_PIN, 1000); delay(150);
     tone(BUZZER_PIN, 1500); delay(150);
     
-    if (!alertaEnviada) {
-      enviarTelegram("ALERTA: Agua detectada. Válvula cerrada.");
-      alertaEnviada = true;
-    }
+    alertaEnviada = true;
   } else {
     noTone(BUZZER_PIN); 
     if (nivelAgua < 2) { 
