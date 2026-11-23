@@ -1,0 +1,89 @@
+<div class="dashboard-container">
+  
+  <!-- ENCABEZADO -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">💧</div>
+      <h1>EcoTanque <span>TheHouseFit</span></h1>
+    </div>
+    <div class="status" [class.active]="conectadoBroker">
+      <span class="dot"></span>
+      {{ conectadoBroker ? 'Sistema en Línea' : 'Desconectado' }}
+    </div>
+  </header>
+
+  <main class="main-content">
+    
+    <!-- TARJETAS DE DATOS -->
+    <section class="cards">
+      
+      <div class="card blue-card">
+        <div class="card-icon">📏</div>
+        <div class="card-info">
+          <h3>Nivel del Tanque</h3>
+          <p class="value">{{ porcentajeTanque }}%</p>
+          <span class="label">Sensor Ultrasónico</span>
+        </div>
+      </div>
+
+      <div class="card cyan-card" [class.danger-card]="nivelAgua >= 5">
+        <div class="card-icon">💧</div>
+        <div class="card-info">
+          <h3>Nivel de Humedad</h3>
+          <p class="value">{{ nivelAgua }}%</p>
+          <span class="label">Sensor de Humedad</span>
+        </div>
+      </div>
+
+      <div class="card green-card" [class.red-card]="estadoValvula.toLowerCase() === 'cerrada'">
+        <div class="card-icon">{{ estadoValvula.toLowerCase() === 'abierta' ? '🔓' : '🔒' }}</div>
+        <div class="card-info">
+          <h3>Estado Válvula</h3>
+          <p class="value small-value">{{ estadoValvula | uppercase }}</p>
+          <span class="label">Servo Motor</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRAFICA Y CONTROLES -->
+    <section class="workspace">
+      
+      <!-- GRAFICO -->
+      <div class="panel chart-panel">
+        <div class="panel-header">
+          <h2>📈 Historial del Nivel</h2>
+          <span class="badge">Últimos datos</span>
+        </div>
+        <div class="chart-wrapper">
+          <svg viewBox="0 0 600 200" class="chart">
+            <line x1="20" y1="40" x2="580" y2="40" stroke-width="1" stroke-dasharray="5,5"/>
+            <line x1="20" y1="90" x2="580" y2="90" stroke-width="1" stroke-dasharray="5,5"/>
+            <line x1="20" y1="140" x2="580" y2="140" stroke-width="1" stroke-dasharray="5,5"/>
+            
+            <polyline [attr.points]="puntosGrafica" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="line-anim"/>
+          </svg>
+        </div>
+        <p class="update-time">🕒 Última actualización: {{ ultimaActualizacion }}</p>
+      </div>
+
+      <!-- CONTROLES DEL SERVO -->
+      <div class="panel control-panel">
+        <h2>🎛️ Control Remoto</h2>
+        <p>Abre o frena el paso del agua desde tu dispositivo.</p>
+        
+        <div class="buttons">
+          <!-- Botón Abrir (Verde) -->
+          <button class="btn-open" (click)="controlarValvula('abrir')" [disabled]="estadoValvula.toLowerCase() === 'abierta' || nivelAgua >= 5">
+            <span class="btn-icon">▶</span> Abrir Flujo
+          </button>
+
+          <!-- Botón Cerrar (Rojo) -->
+          <button class="btn-close" (click)="controlarValvula('cerrar')" [disabled]="estadoValvula.toLowerCase() === 'cerrada'">
+            <span class="btn-icon">⏸</span> Cerrar / Frenar
+          </button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
